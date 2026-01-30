@@ -1,0 +1,5 @@
+{
+  "name": "Notion Content Importer Widget",
+  "description": "A smart widget that searches Netflix and Watcha content details using Gemini AI and formats them perfectly for your Notion database.",
+  "requestFramePermissions": []
+}
