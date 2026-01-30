@@ -90,7 +90,7 @@ const App: React.FC = () => {
   const isSetupValid = apiKey.trim() && selectedDbId;
 
   return (
-    <div className="w-[400px] h-[350px] bg-[#FFF5F8] rounded-xl shadow-2xl overflow-hidden flex flex-col border border-white/40 ring-1 ring-black/5 animate-in zoom-in-95 duration-300">
+    <div className="w-[400px] h-[350px] bg-white rounded-xl overflow-hidden flex flex-col border border-pink-100 animate-in zoom-in-95 duration-300">
       {/* Pastel Pink Header */}
       <div className="bg-[#FFD1DC] px-3 pt-3 pb-0 flex flex-col gap-2 shrink-0">
         <div className="flex items-center justify-between">
@@ -99,20 +99,19 @@ const App: React.FC = () => {
             <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E] shadow-inner opacity-80" />
             <div className="w-2.5 h-2.5 rounded-full bg-[#28C840] shadow-inner opacity-80" />
           </div>
-          {/* Notion Widget text removed as requested */}
         </div>
         
         {/* Tabs with White Interior for Active Tab */}
         <div className="flex items-end gap-1 px-1 mt-1">
           <button 
             onClick={() => setActiveTab('search')}
-            className={`px-4 py-1.5 text-[11px] font-bold rounded-t-lg transition-all flex items-center gap-1.5 ${activeTab === 'search' ? 'bg-white text-rose-500 shadow-[0_-2px_5px_rgba(0,0,0,0.05)]' : 'text-rose-900/40 hover:bg-white/30'}`}
+            className={`px-4 py-1.5 text-[11px] font-bold rounded-t-lg transition-all flex items-center gap-1.5 ${activeTab === 'search' ? 'bg-white text-rose-500' : 'text-rose-900/40 hover:bg-white/30'}`}
           >
             <Search className="w-3 h-3" /> Film
           </button>
           <button 
             onClick={() => setActiveTab('setup')}
-            className={`px-4 py-1.5 text-[11px] font-bold rounded-t-lg transition-all flex items-center gap-1.5 ${activeTab === 'setup' ? 'bg-white text-rose-500 shadow-[0_-2px_5px_rgba(0,0,0,0.05)]' : 'text-rose-900/40 hover:bg-white/30'}`}
+            className={`px-4 py-1.5 text-[11px] font-bold rounded-t-lg transition-all flex items-center gap-1.5 ${activeTab === 'setup' ? 'bg-white text-rose-500' : 'text-rose-900/40 hover:bg-white/30'}`}
           >
             <Settings className="w-3 h-3" /> Settings {!isSetupValid && <div className="w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse" />}
           </button>
@@ -137,21 +136,21 @@ const App: React.FC = () => {
                 <span className="text-[8px] opacity-60">필수</span>
               </label>
               {needsProxyDemo && (
-                <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-2 bg-rose-400 text-white rounded-lg text-[9px] font-black hover:bg-rose-500 transition-colors shadow-lg shadow-pink-100 mb-1">
+                <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-2 bg-rose-400 text-white rounded-lg text-[9px] font-black hover:bg-rose-500 transition-colors mb-1">
                   <ShieldAlert className="w-3 h-3" /> Proxy 권한 활성화하기
                 </a>
               )}
               {databases.length > 0 && (
                 <div className="grid gap-1 max-h-24 overflow-y-auto p-1 border border-pink-100 rounded-lg bg-pink-50/20">
                   {databases.map(db => (
-                    <button key={db.id} onClick={() => setSelectedDbId(db.id)} className={`text-left px-2 py-1.5 rounded-md text-[10px] truncate flex items-center justify-between transition-all ${selectedDbId === db.id ? 'bg-white text-rose-500 font-bold shadow-sm' : 'text-gray-400 hover:bg-white/50'}`}>
+                    <button key={db.id} onClick={() => setSelectedDbId(db.id)} className={`text-left px-2 py-1.5 rounded-md text-[10px] truncate flex items-center justify-between transition-all ${selectedDbId === db.id ? 'bg-white text-rose-500 font-bold' : 'text-gray-400 hover:bg-white/50'}`}>
                       <span className="truncate">{db.title}</span>
                       {selectedDbId === db.id && <Check className="w-2.5 h-2.5" />}
                     </button>
                   ))}
                 </div>
               )}
-              <button onClick={handleFetchDatabases} disabled={isLoadingDbs || !apiKey.trim()} className="w-full py-2.5 bg-rose-400 text-white rounded-lg text-xs font-bold hover:bg-rose-500 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md shadow-pink-100">
+              <button onClick={handleFetchDatabases} disabled={isLoadingDbs || !apiKey.trim()} className="w-full py-2.5 bg-rose-400 text-white rounded-lg text-xs font-bold hover:bg-rose-500 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                 {isLoadingDbs ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Database className="w-3 h-3" />} DB 목록 가져오기
               </button>
             </div>
@@ -181,7 +180,7 @@ const App: React.FC = () => {
               <button 
                 onClick={handleSaveSettings}
                 disabled={!isSetupValid}
-                className="flex items-center justify-center gap-2 py-2.5 bg-rose-500 text-white rounded-xl text-[10px] font-black hover:bg-rose-600 shadow-lg shadow-pink-100 transition-all active:scale-95 disabled:opacity-30"
+                className="flex items-center justify-center gap-2 py-2.5 bg-rose-500 text-white rounded-xl text-[10px] font-black hover:bg-rose-600 transition-all active:scale-95 disabled:opacity-30"
               >
                 {saveFeedback ? <Check className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                 {saveFeedback ? '저장 완료' : '설정 완료'}
@@ -191,15 +190,15 @@ const App: React.FC = () => {
         ) : (
           <div className="space-y-4 animate-in fade-in duration-300">
             <form onSubmit={handleSearch} className="relative">
-              <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="영화나 드라마 제목 입력..." className="w-full pl-9 pr-3 py-2.5 bg-pink-50/20 border border-pink-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-200 text-xs shadow-sm transition-all" />
+              <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="영화나 드라마 제목 입력..." className="w-full pl-9 pr-3 py-2.5 bg-pink-50/20 border border-pink-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-200 text-xs transition-all" />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-pink-300" />
               {status === AppStatus.SEARCHING && <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-pink-400 animate-spin" />}
             </form>
 
             <div className="space-y-2 pb-2">
               {results.map((item, idx) => (
-                <div key={idx} className="bg-white hover:bg-pink-50/30 border border-pink-50 rounded-xl p-2 flex gap-3 items-center group transition-all animate-in slide-in-from-bottom-1 duration-300 shadow-sm hover:shadow-md">
-                  <div className="w-10 h-14 bg-pink-50 rounded-md overflow-hidden shrink-0 shadow-sm border border-pink-100">
+                <div key={idx} className="bg-white hover:bg-pink-50/30 border border-pink-50 rounded-xl p-2 flex gap-3 items-center group transition-all animate-in slide-in-from-bottom-1 duration-300 shadow-sm border border-pink-50">
+                  <div className="w-10 h-14 bg-pink-50 rounded-md overflow-hidden shrink-0 border border-pink-100">
                     <ImagePreview src={item.coverUrl} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -212,7 +211,7 @@ const App: React.FC = () => {
                   <button 
                     onClick={() => handleImport(idx)} 
                     disabled={savingIndex !== null || successIndices.has(idx)}
-                    className={`p-2 rounded-full transition-all ${successIndices.has(idx) ? 'bg-green-50 text-green-500' : 'bg-rose-400 text-white hover:bg-rose-500 shadow-md active:scale-90'}`}
+                    className={`p-2 rounded-full transition-all ${successIndices.has(idx) ? 'bg-green-50 text-green-500' : 'bg-rose-400 text-white hover:bg-rose-500 active:scale-90'}`}
                   >
                     {savingIndex === idx ? <RefreshCw className="w-4 h-4 animate-spin" /> : successIndices.has(idx) ? <Check className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
                   </button>
@@ -230,7 +229,7 @@ const App: React.FC = () => {
 
         {/* Floating Error Toast */}
         {error && (
-          <div className="absolute bottom-4 left-4 right-4 p-2 bg-rose-500 text-white rounded-lg text-[9px] font-bold flex items-center gap-2 shadow-xl animate-in fade-in slide-in-from-bottom-2">
+          <div className="absolute bottom-4 left-4 right-4 p-2 bg-rose-500 text-white rounded-lg text-[9px] font-bold flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
             <AlertCircle className="w-3 h-3 shrink-0" /> <span className="flex-1 truncate">{error}</span>
             <button onClick={() => setError(null)}><X className="w-3 h-3" /></button>
           </div>
