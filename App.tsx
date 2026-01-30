@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Check, Settings, Database, AlertCircle, RefreshCw, User, PlusCircle, Image as ImageIcon, ShieldAlert, X } from 'lucide-react';
+import { Search, Check, Settings, Database, AlertCircle, RefreshCw, User, PlusCircle, Image as ImageIcon, ShieldAlert, X, Copy, CheckCircle2 } from 'lucide-react';
 import { searchContentDetails } from './geminiService.ts';
 import { searchTmdbContent } from './tmdbService.ts';
 import { addToNotionDatabase, listDatabases } from './notionService.ts';
@@ -25,6 +25,8 @@ const App: React.FC = () => {
   });
   const [isLoadingDbs, setIsLoadingDbs] = useState(false);
   const [needsProxyDemo, setNeedsProxyDemo] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('notion_api_key', apiKey.trim());
@@ -71,6 +73,22 @@ const App: React.FC = () => {
     } finally { setSavingIndex(null); }
   };
 
+  const copyWidgetUrl = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopyFeedback(true);
+    setTimeout(() => setCopyFeedback(false), 2000);
+  };
+
+  const handleSaveSettings = () => {
+    setSaveFeedback(true);
+    setTimeout(() => {
+      setSaveFeedback(false);
+      setActiveTab('search');
+    }, 1000);
+  };
+
+  const isSetupValid = apiKey.trim() && selectedDbId;
+
   return (
     <div className="w-[400px] h-[350px] bg-[#FFF5F8] rounded-xl shadow-2xl overflow-hidden flex flex-col border border-white/40 ring-1 ring-black/5 animate-in zoom-in-95 duration-300">
       {/* Pastel Pink Header */}
@@ -81,7 +99,7 @@ const App: React.FC = () => {
             <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E] shadow-inner opacity-80" />
             <div className="w-2.5 h-2.5 rounded-full bg-[#28C840] shadow-inner opacity-80" />
           </div>
-          <div className="text-[10px] font-black text-rose-500/60 tracking-tight uppercase">Notion Widget</div>
+          {/* Notion Widget text removed as requested */}
         </div>
         
         {/* Tabs with White Interior for Active Tab */}
@@ -90,30 +108,36 @@ const App: React.FC = () => {
             onClick={() => setActiveTab('search')}
             className={`px-4 py-1.5 text-[11px] font-bold rounded-t-lg transition-all flex items-center gap-1.5 ${activeTab === 'search' ? 'bg-white text-rose-500 shadow-[0_-2px_5px_rgba(0,0,0,0.05)]' : 'text-rose-900/40 hover:bg-white/30'}`}
           >
-            <Search className="w-3 h-3" /> 검색
+            <Search className="w-3 h-3" /> Film
           </button>
           <button 
             onClick={() => setActiveTab('setup')}
             className={`px-4 py-1.5 text-[11px] font-bold rounded-t-lg transition-all flex items-center gap-1.5 ${activeTab === 'setup' ? 'bg-white text-rose-500 shadow-[0_-2px_5px_rgba(0,0,0,0.05)]' : 'text-rose-900/40 hover:bg-white/30'}`}
           >
-            <Settings className="w-3 h-3" /> 설정 {(!apiKey || !selectedDbId) && <div className="w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse" />}
+            <Settings className="w-3 h-3" /> Settings {!isSetupValid && <div className="w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse" />}
           </button>
         </div>
       </div>
 
-      {/* Main Content Area - White background for contrast */}
+      {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-4 relative bg-white">
         {activeTab === 'setup' ? (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 pb-2">
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black text-rose-300 uppercase tracking-widest px-1">1. Notion API Key</label>
+              <label className="text-[9px] font-black text-rose-300 uppercase tracking-widest px-1 flex justify-between">
+                <span>1. Notion API Key</span>
+                <span className="text-[8px] opacity-60">필수</span>
+              </label>
               <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="secret_..." className="w-full px-3 py-2 bg-pink-50/30 border border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-200 text-xs transition-all placeholder:text-pink-100" />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[9px] font-black text-rose-300 uppercase tracking-widest px-1">2. Database Selection</label>
+              <label className="text-[9px] font-black text-rose-300 uppercase tracking-widest px-1 flex justify-between">
+                <span>2. Database Selection</span>
+                <span className="text-[8px] opacity-60">필수</span>
+              </label>
               {needsProxyDemo && (
-                <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-2 bg-rose-400 text-white rounded-lg text-[9px] font-black hover:bg-rose-500 transition-colors shadow-lg shadow-pink-100">
+                <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-2 bg-rose-400 text-white rounded-lg text-[9px] font-black hover:bg-rose-500 transition-colors shadow-lg shadow-pink-100 mb-1">
                   <ShieldAlert className="w-3 h-3" /> Proxy 권한 활성화하기
                 </a>
               )}
@@ -133,7 +157,10 @@ const App: React.FC = () => {
             </div>
 
             <div className="space-y-1.5 pt-2 border-t border-pink-50">
-              <label className="text-[9px] font-black text-rose-300 uppercase tracking-widest px-1">3. TMDB Key (Optional)</label>
+              <label className="text-[9px] font-black text-rose-300 uppercase tracking-widest px-1 flex justify-between">
+                <span>3. TMDB Key</span>
+                <span className="text-[8px] opacity-60">선택</span>
+              </label>
               <input 
                 type="password" 
                 value={tmdbKey} 
@@ -141,6 +168,24 @@ const App: React.FC = () => {
                 placeholder="API key for posters..." 
                 className="w-full px-3 py-2 bg-pink-50/30 border border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-200 text-xs placeholder:text-pink-100" 
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <button 
+                onClick={copyWidgetUrl}
+                className="flex items-center justify-center gap-2 py-2.5 border-2 border-pink-100 text-rose-400 rounded-xl text-[10px] font-black hover:bg-pink-50 transition-all active:scale-95"
+              >
+                {copyFeedback ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                {copyFeedback ? 'URL 복사됨!' : '위젯 URL 복사'}
+              </button>
+              <button 
+                onClick={handleSaveSettings}
+                disabled={!isSetupValid}
+                className="flex items-center justify-center gap-2 py-2.5 bg-rose-500 text-white rounded-xl text-[10px] font-black hover:bg-rose-600 shadow-lg shadow-pink-100 transition-all active:scale-95 disabled:opacity-30"
+              >
+                {saveFeedback ? <Check className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                {saveFeedback ? '저장 완료' : '설정 완료'}
+              </button>
             </div>
           </div>
         ) : (
