@@ -91,12 +91,38 @@ export const addToNotionDatabase = async (config: NotionConfig, content: Content
     notionProperties["장르"] = { multi_select: genreTags };
   }
   
-  // 3. 페이지 생성 요청
-  const body = JSON.stringify({
+  // 3. 페이지 생성 요청 데이터 구성
+  const pageData: any = {
     parent: { database_id: extractDatabaseId(config.databaseId) },
-    cover: content.coverUrl ? { type: "external", external: { url: content.coverUrl } } : null,
     properties: notionProperties
-  });
+  };
+
+  // 영화 표지를 3곳에 추가: 커버 이미지, 아이콘, 페이지 본문 이미지 블록
+  if (content.coverUrl) {
+    // 1. 커버 이미지
+    pageData.cover = { 
+      type: "external", 
+      external: { url: content.coverUrl } 
+    };
+    // 2. 아이콘
+    pageData.icon = { 
+      type: "external", 
+      external: { url: content.coverUrl } 
+    };
+    // 3. 페이지 내 이미지 (children 블록)
+    pageData.children = [
+      {
+        object: "block",
+        type: "image",
+        image: {
+          type: "external",
+          external: { url: content.coverUrl }
+        }
+      }
+    ];
+  }
+  
+  const body = JSON.stringify(pageData);
   
   const { url, options } = getFetchParams('/pages', config.apiKey, 'POST', false);
   let response = await fetch(url, { ...options, body });
