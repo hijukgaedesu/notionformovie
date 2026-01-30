@@ -10,12 +10,12 @@ const extractDatabaseId = (input: string): string => {
   return match ? match[1] : cleaned.replace(/-/g, "");
 };
 
-const getFetchParams = (path: string, apiKey: string, useFallback: boolean = false) => {
+const getFetchParams = (path: string, apiKey: string, method: string = 'POST', useFallback: boolean = false) => {
   const baseUrl = useFallback ? `${PUBLIC_PROXY}https://api.notion.com/v1` : `/notion-api`;
   return {
     url: `${baseUrl}${path}`,
     options: {
-      method: 'POST',
+      method,
       headers: {
         'Authorization': `Bearer ${apiKey.trim()}`,
         'Content-Type': 'application/json',
@@ -28,10 +28,10 @@ const getFetchParams = (path: string, apiKey: string, useFallback: boolean = fal
 
 export const listDatabases = async (apiKey: string): Promise<NotionDatabase[]> => {
   try {
-    const { url, options } = getFetchParams('/search', apiKey, false);
+    const { url, options } = getFetchParams('/search', apiKey, 'POST', false);
     let response = await fetch(url, { ...options, body: JSON.stringify({ filter: { property: "object", value: "database" } }) });
     if (response.status === 404 || !response.ok) {
-      const { url: fUrl, options: fOpts } = getFetchParams('/search', apiKey, true);
+      const { url: fUrl, options: fOpts } = getFetchParams('/search', apiKey, 'POST', true);
       response = await fetch(fUrl, { ...fOpts, body: JSON.stringify({ filter: { property: "object", value: "database" } }) });
     }
     if (!response.ok) {
@@ -47,44 +47,67 @@ export const listDatabases = async (apiKey: string): Promise<NotionDatabase[]> =
   }
 };
 
+const getDatabaseSchema = async (apiKey: string, databaseId: string) => {
+  const dbId = extractDatabaseId(databaseId);
+  const { url, options } = getFetchParams(`/databases/${dbId}`, apiKey, 'GET', false);
+  let response = await fetch(url, options);
+  if (response.status === 404 || !response.ok) {
+    const { url: fUrl, options: fOpts } = getFetchParams(`/databases/${dbId}`, apiKey, 'GET', true);
+    response = await fetch(fUrl, fOpts);
+  }
+  if (!response.ok) throw new Error("데이터베이스 구조를 확인할 수 없습니다.");
+  return response.json();
+};
+
 export const addToNotionDatabase = async (config: NotionConfig, content: ContentMetadata) => {
-  /**
-   * 사용자의 요청에 따른 컬럼 매핑 전략:
-   * 1. '제목' 칼럼은 따로 없으므로, 노션 페이지의 기본 'title' 속성(보통 '이름')에 영화 제목을 넣습니다.
-   * 2. '감독', '장르' 정보는 각각의 타입에 맞춰 데이터를 보냅니다.
-   * 3. '감상 완료일', '평점' 칼럼은 노션에 존재하지만 위젯에서는 비워둡니다 (사용자 직접 입력용).
-   */
+  // 1. DB 스키마를 가져와서 제목 타입 컬럼명과 감독/장르 컬럼 존재 확인
+  const dbInfo = await getDatabaseSchema(config.apiKey, config.databaseId);
+  const schemaProps = dbInfo.properties;
   
+  // 제목(title) 타입인 컬럼명 자동 찾기
+  const titleKey = Object.keys(schemaProps).find(key => schemaProps[key].type === 'title');
+  
+  if (!titleKey) {
+    throw new Error("데이터베이스에 제목 속성이 없습니다.");
+  }
+
+  // 2. 속성 매핑 구성
+  const notionProperties: any = {
+    [titleKey]: { 
+      title: [{ text: { content: content.title } }] 
+    }
+  };
+
+  // '감독' 컬럼이 있으면 추가 (Rich Text)
+  if (schemaProps["감독"]) {
+    notionProperties["감독"] = { 
+      rich_text: [{ text: { content: content.director || "정보 없음" } }] 
+    };
+  }
+
+  // '장르' 컬럼이 있으면 추가 (Multi-Select)
+  if (schemaProps["장르"] && schemaProps["장르"].type === 'multi_select') {
+    const genreTags = (content.genres || []).map(g => ({ name: g.replace(/,/g, '') }));
+    notionProperties["장르"] = { multi_select: genreTags };
+  }
+  
+  // 3. 페이지 생성 요청
   const body = JSON.stringify({
     parent: { database_id: extractDatabaseId(config.databaseId) },
     cover: content.coverUrl ? { type: "external", external: { url: content.coverUrl } } : null,
-    properties: {
-      // 노션의 기본 제목 속성 (보통 '이름'으로 되어 있습니다)
-      "이름": { 
-        title: [{ text: { content: content.title } }] 
-      },
-      "감독": { 
-        rich_text: [{ text: { content: content.director || "정보 없음" } }] 
-      },
-      "장르": { 
-        multi_select: (content.genres || []).map(name => ({ name })) 
-      }
-      // '감상 완료일'과 '평점'은 값을 보내지 않으면 노션에서 빈 칸으로 생성됩니다.
-    }
+    properties: notionProperties
   });
   
-  const { url, options } = getFetchParams('/pages', config.apiKey, false);
+  const { url, options } = getFetchParams('/pages', config.apiKey, 'POST', false);
   let response = await fetch(url, { ...options, body });
   if (response.status === 404 || !response.ok) {
-    const { url: fUrl, options: fOpts } = getFetchParams('/pages', config.apiKey, true);
+    const { url: fUrl, options: fOpts } = getFetchParams('/pages', config.apiKey, 'POST', true);
     response = await fetch(fUrl, { ...fOpts, body });
   }
   
   if (!response.ok) {
     const errorData = await response.json();
-    // 만약 '이름'이라는 컬럼명이 아니라면 에러가 날 수 있으므로 상세 메시지 출력
-    console.error("Notion Import Error:", errorData);
-    throw new Error(errorData.message || "노션 저장에 실패했습니다. 컬럼명을 확인해주세요.");
+    throw new Error(errorData.message || "노션 저장 실패");
   }
   
   return response.json();
