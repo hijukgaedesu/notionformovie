@@ -48,22 +48,44 @@ export const listDatabases = async (apiKey: string): Promise<NotionDatabase[]> =
 };
 
 export const addToNotionDatabase = async (config: NotionConfig, content: ContentMetadata) => {
+  /**
+   * 사용자의 요청에 따른 컬럼 매핑 전략:
+   * 1. '제목' 칼럼은 따로 없으므로, 노션 페이지의 기본 'title' 속성(보통 '이름')에 영화 제목을 넣습니다.
+   * 2. '감독', '장르' 정보는 각각의 타입에 맞춰 데이터를 보냅니다.
+   * 3. '감상 완료일', '평점' 칼럼은 노션에 존재하지만 위젯에서는 비워둡니다 (사용자 직접 입력용).
+   */
+  
   const body = JSON.stringify({
     parent: { database_id: extractDatabaseId(config.databaseId) },
     cover: content.coverUrl ? { type: "external", external: { url: content.coverUrl } } : null,
     properties: {
-      "제목": { title: [{ text: { content: content.title } }] },
-      "감독": { rich_text: [{ text: { content: content.director || "정보 없음" } }] },
-      "장르": { multi_select: content.genres.map(name => ({ name })) },
-      "분류": { select: { name: content.category || "영화" } }
+      // 노션의 기본 제목 속성 (보통 '이름'으로 되어 있습니다)
+      "이름": { 
+        title: [{ text: { content: content.title } }] 
+      },
+      "감독": { 
+        rich_text: [{ text: { content: content.director || "정보 없음" } }] 
+      },
+      "장르": { 
+        multi_select: (content.genres || []).map(name => ({ name })) 
+      }
+      // '감상 완료일'과 '평점'은 값을 보내지 않으면 노션에서 빈 칸으로 생성됩니다.
     }
   });
+  
   const { url, options } = getFetchParams('/pages', config.apiKey, false);
   let response = await fetch(url, { ...options, body });
   if (response.status === 404 || !response.ok) {
     const { url: fUrl, options: fOpts } = getFetchParams('/pages', config.apiKey, true);
     response = await fetch(fUrl, { ...fOpts, body });
   }
-  if (!response.ok) throw new Error("저장 실패");
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    // 만약 '이름'이라는 컬럼명이 아니라면 에러가 날 수 있으므로 상세 메시지 출력
+    console.error("Notion Import Error:", errorData);
+    throw new Error(errorData.message || "노션 저장에 실패했습니다. 컬럼명을 확인해주세요.");
+  }
+  
   return response.json();
 };
